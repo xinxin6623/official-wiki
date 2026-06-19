@@ -46,6 +46,11 @@ grep "^## 2026-06" CHANGELOG.md                        # 2026 年 6 月所有动
 
 ---
 
+## 2026-06-20 #feat scope:fetch - Phase 2/3 落地:sources.yaml + fetch.py 真机跑通
+
+- Why: 抓取层须把原文不可变落 raw,后续双轨沉淀才有料;raw-first 闭环第一环
+- 详见: ~/projects/wx-brief/{sources.yaml,fetch.py,README.md}（昌平二小招生公告实测,9/9 图,幂等净增=0）
+
 ## 2026-06-19 #chore scope:repo - 建本地 git 并推 GitHub 远端同步
 
 - Why: 文档此前纯本地无版本/无备份,接入远端便于换机与协作

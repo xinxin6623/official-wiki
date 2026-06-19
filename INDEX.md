@@ -9,15 +9,17 @@
 > 只保留最新一条，下一轮 wrap-up 直接覆盖。历史接力沉淀到 obwiki。
 
 ### 概述
-**Phase 1 已真机跑通（引擎装好、内核就绪、单篇抓取验证）。下一步 Phase 2：写 `sources.yaml`，然后 Phase 3 写 `fetch.py`（按实测的"产物落包目录"坑实现产物定位）。**
+**Phase 1/2/3 已真机跑通：引擎+内核就绪、`sources.yaml` 解析、`fetch.py` 抓取入库落 raw（含三状态位 frontmatter、自动 L0 INDEX、幂等去重）。下一步 Phase 4：写 `distill.py`（轨 A·raw → wiki concept + 建链，走 LiteLLM `local-qwen3-14b`）。**
 
 ### 明细
-- **2026-06-17**：
-  - ✅ **Phase 1 完成**：`wechat-article-to-markdown` v0.1.0 装于 `~/.local/bin/`；Camoufox 内核 v135.0.1-beta.24 经 `gh-proxy.com` 镜像下载并解压到 `~/Library/Caches/camoufox`（`camoufox version` = Up to date）；单篇真机抓取通过（北京二小一篇，32/33 图片本地化，元信息齐全）。
-  - ⚠ **实测关键坑**：产物落**包安装目录** `.../site-packages/output/`，**不是 CWD**，`cd` 无效。`fetch.py` 须 diff 包目录定位产物并搬回 `.raw/output/`（方案 Phase 1 已知坑#1 + Phase 3 `fetch_one` 已按实情改）。
-  - **下一步**：Phase 2 `sources.yaml` → Phase 3 `fetch.py`（落 raw + 三状态位 frontmatter）→ Phase 4 distill（轨 A）/ Phase 5 index_rag（轨 B，复用现有 LightRAG）/ Phase 6 retrieve（分流）/ Phase 7 `/wx-brief`。
-- **2026-06-18**：依赖与内核全量备份到 `vendor/`（zip 284M + 内核 611M + venv 302M，含 `README.md` 恢复指南，`.gitignore` 已忽略）。换机恢复走方式 A（只铺内核 + `uv tool install` 重装 CLI），别直接铺 venv（绝对路径陷阱）。
-- 脚本工程 `~/projects/wx-brief/`（已建 `state/` `.raw/`），vault `~/.ai-vault/wechat/`。关键决策：RAG = 复用现有 LightRAG；wiki 沉淀 = 独立 distill 步骤。
+- **2026-06-20**：
+  - ✅ **Phase 2/3 完成**（`~/projects/wx-brief/`）：`sources.yaml`（URL 唯一人工入口）+ `fetch.py`（抓取→frontmatter→content-hash 去重→落 `~/.ai-vault/wechat/raw/`→重建 L0 `INDEX.md`）+ `pyproject.toml` + `README.md`。
+  - **真机实测**：昌平二小招生公告一篇，9/9 图落 `.assets/`、正文路径已改写、发布日/公号名从文章头部 `> 公众号:` 自动解析；二次运行净增=0（幂等）。
+  - **实现要点**：CLI 走绝对路径 `~/.local/bin/`；产物 `output/` 用 diff 包目录定位（坑#1）；退出码不可靠靠产物判成功（坑#2）；URL 间 2–5s 随机 sleep。
+  - **下一步**：Phase 4 `distill.py`（轨 A）→ Phase 5 `index_rag.py`（轨 B，复用现有 LightRAG）→ Phase 6 `retrieve.py`（分流）→ Phase 7 `/wx-brief`。
+- **2026-06-17**：✅ **Phase 1**：`wechat-article-to-markdown` v0.1.0 装于 `~/.local/bin/`；Camoufox 内核 v135.0.1-beta.24 经 `gh-proxy.com` 镜像装好（`camoufox version`=Up to date）。⚠ 关键坑：产物落**包安装目录** `site-packages/output/` 非 CWD（已在 fetch.py 用 diff 法处理）。
+- **2026-06-18**：依赖与内核全量备份到 `vendor/`（zip 284M + 内核 611M + venv 302M，`.gitignore` 已忽略）。换机恢复走方式 A（铺内核 + `uv tool install` 重装 CLI），别直接铺 venv（绝对路径陷阱）。
+- vault `~/.ai-vault/wechat/`（`raw/` + `wiki/concepts|entities/` + 自动 `INDEX.md`）。关键决策：RAG = 复用现有 LightRAG；wiki 沉淀 = 独立 distill 步骤。
 
 ## 项目结构
 
