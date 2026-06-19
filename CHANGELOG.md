@@ -46,6 +46,11 @@ grep "^## 2026-06" CHANGELOG.md                        # 2026 年 6 月所有动
 
 ---
 
+## 2026-06-19 #chore scope:repo - 建本地 git 并推 GitHub 远端同步
+
+- Why: 文档此前纯本地无版本/无备份,接入远端便于换机与协作
+- 详见: github.com/xinxin6623/official-wiki (PUBLIC,仅同步文档;vendor/.raw 已 gitignore)
+
 ## 2026-06-18 #chore scope:vendor - 全量备份转换引擎依赖与 Camoufox 内核
 
 - Why: 内核镜像下载慢易断,离线留底便于换机/重装一键恢复
