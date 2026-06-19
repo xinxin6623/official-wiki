@@ -1,0 +1,9 @@
+# 离线依赖备份（~1.2GB），仅本机留底，不进版本控制
+# 恢复方式见 vendor/README.md
+vendor/
+
+# 临时抓取产物
+.raw/
+
+# macOS 系统文件
+.DS_Store
