@@ -5,5 +5,19 @@ vendor/
 # 临时抓取产物
 .raw/
 
+# 学校名单核验与 wx-exporter 导入/抓取中间结果（本机留存，不推公开仓库）
+*.xlsx
+.~*.xlsx
+school_names.txt
+wechat_candidates_*.csv
+official_name_*.csv
+official_name_*.json
+wx-import-*.html
+wx_exporter_*.csv
+wx_exporter_*.json
+wx_exporter_*.js
+学校*.csv
+学校*.xlsx
+
 # macOS 系统文件
 .DS_Store

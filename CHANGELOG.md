@@ -46,6 +46,56 @@ grep "^## 2026-06" CHANGELOG.md                        # 2026 年 6 月所有动
 
 ---
 
+## 2026-06-22 #feat scope:sources scope:fetch - 批量补入学校公号并抓取近期文章
+
+- Why: 名单校名需按官方/规范名称落库,每校至少有近期 raw 文章供后续蒸馏
+- 详见: 学校公众号抓取入库执行报告.csv + ~/projects/wx-brief/sources.yaml
+
+## 2026-06-21 #chore scope:lightrag #wip - 安装 LightRAG 并定位本地抽取超时
+
+- Why: RAG 轨需真实 endpoint 验证,但本地模型抽取性能决定能否稳定灌库
+- 详见: ~/projects/wx-brief/bin/lightrag_server_local.sh（qwen3:14b 抽取超时;服务已停）
+
+## 2026-06-21 #docs scope:exporter scope:sources - 明确 wx-exporter 是新文章发现依赖
+
+- Why: 固定学校也需要发现新 URL,否则 fetch 只能消费 sources.yaml 已知链接
+- 详见: wx-brief-implementation-plan.md §6 + http://localhost:3000/dashboard/account
+
+## 2026-06-21 #feat scope:distill scope:vault - Phase 4 首版蒸馏到 wiki concepts
+
+- Why: raw 入库后需要 L1 逻辑层承接默认 wiki 检索,为后续简报与 RAG 分流铺路
+- 详见: ~/projects/wx-brief/distill.py（42 篇 raw → 29 个 concept + 10 个 graph）
+
+## 2026-06-21 #feat scope:index-rag #wip - Phase 5 切片与 staging 后端落地
+
+- Why: 真实 LightRAG 接入前需先固化切片、metadata 与幂等边界,避免误翻状态位
+- 详见: ~/projects/wx-brief/index_rag.py（staging 2 篇 → 7 chunks,真实 endpoint 待接）
+
+## 2026-06-20 #chore scope:fetch #perf - 安装低频定时抓取任务
+
+- Why: 近一年文章回填需长期慢速执行,避免一次性高频抓取触发访问限制
+- 详见: ~/Library/LaunchAgents/com.james.wx-brief.fetch.plist + ~/projects/wx-brief/bin/wx_brief_fetch_daily.sh
+
+## 2026-06-20 #feat scope:fetch #perf - 增加限速分批抓取并完成 6 篇扩抓
+
+- Why: 扩大学校公号采集需避免访问限制,必须串行限速、可恢复、可验证
+- 详见: ~/projects/wx-brief/fetch.py（--limit/--per-school-limit/sleep/cooldown;当前 3 校 12 篇）
+
+## 2026-06-20 #feat scope:vault scope:obsidian - 补齐学校 wiki 骨架与 Obsidian 链接
+
+- Why: raw 归档需与 L1 wiki 层分离,让 INDEX 真正成为可点击的渐进式披露入口
+- 详见: ~/projects/wx-brief/fetch.py（3 校各再采样 1 篇;全库 wikilink/图片校验通过）
+
+## 2026-06-20 #fix scope:obsidian - 修复 INDEX 表格链接被 wikilink alias 打断
+
+- Why: Obsidian 表格会把 `[[path|alias]]` 的竖线当分列,需改为 Markdown 相对链接
+- 详见: ~/projects/wx-brief/fetch.py（全库 missing_links=0,bad_table_rows=0）
+
+## 2026-06-20 #feat scope:sources scope:fetch - 接入 exporter URL 并验证单校抓取
+
+- Why: 真实学校公号链接需进入 sources.yaml,才能从方案转入批量入库验证
+- 详见: ~/projects/wx-brief/sources.yaml（3 校 77 条 URL;三校各试抓 1 篇成功）
+
 ## 2026-06-20 #feat scope:fetch - Phase 2/3 落地:sources.yaml + fetch.py 真机跑通
 
 - Why: 抓取层须把原文不可变落 raw,后续双轨沉淀才有料;raw-first 闭环第一环

@@ -9,17 +9,27 @@
 > 只保留最新一条，下一轮 wrap-up 直接覆盖。历史接力沉淀到 obwiki。
 
 ### 概述
-**Phase 1/2/3 已真机跑通：引擎+内核就绪、`sources.yaml` 解析、`fetch.py` 抓取入库落 raw（含三状态位 frontmatter、自动 L0 INDEX、幂等去重）。下一步 Phase 4：写 `distill.py`（轨 A·raw → wiki concept + 建链，走 LiteLLM `local-qwen3-14b`）。**
+**Phase 4 已完成；Phase 5 已完成切片/staging 与本机 LightRAG 安装，但真实灌库被本地 `qwen3:14b` 抽取超时卡住。下一步优先做两件事：给 LightRAG 换更快/远端 LLM 跑通真实索引；把 Docker `wx-exporter` 接成新文章 URL 发现层。**
+**⚠ 阻塞：`localhost:3000` 的 `wx-exporter` 是当前新发文章发现依赖；`fetch.py` 只能消费 `sources.yaml` 已知 URL，学校不变也不能自己发现新发布内容。**
 
 ### 明细
-- **2026-06-20**：
-  - ✅ **Phase 2/3 完成**（`~/projects/wx-brief/`）：`sources.yaml`（URL 唯一人工入口）+ `fetch.py`（抓取→frontmatter→content-hash 去重→落 `~/.ai-vault/wechat/raw/`→重建 L0 `INDEX.md`）+ `pyproject.toml` + `README.md`。
-  - **真机实测**：昌平二小招生公告一篇，9/9 图落 `.assets/`、正文路径已改写、发布日/公号名从文章头部 `> 公众号:` 自动解析；二次运行净增=0（幂等）。
-  - **实现要点**：CLI 走绝对路径 `~/.local/bin/`；产物 `output/` 用 diff 包目录定位（坑#1）；退出码不可靠靠产物判成功（坑#2）；URL 间 2–5s 随机 sleep。
-  - **下一步**：Phase 4 `distill.py`（轨 A）→ Phase 5 `index_rag.py`（轨 B，复用现有 LightRAG）→ Phase 6 `retrieve.py`（分流）→ Phase 7 `/wx-brief`。
-- **2026-06-17**：✅ **Phase 1**：`wechat-article-to-markdown` v0.1.0 装于 `~/.local/bin/`；Camoufox 内核 v135.0.1-beta.24 经 `gh-proxy.com` 镜像装好（`camoufox version`=Up to date）。⚠ 关键坑：产物落**包安装目录** `site-packages/output/` 非 CWD（已在 fetch.py 用 diff 法处理）。
-- **2026-06-18**：依赖与内核全量备份到 `vendor/`（zip 284M + 内核 611M + venv 302M，`.gitignore` 已忽略）。换机恢复走方式 A（铺内核 + `uv tool install` 重装 CLI），别直接铺 venv（绝对路径陷阱）。
-- vault `~/.ai-vault/wechat/`（`raw/` + `wiki/concepts|entities/` + 自动 `INDEX.md`）。关键决策：RAG = 复用现有 LightRAG；wiki 沉淀 = 独立 distill 步骤。
+- **2026-06-21 最新状态**：
+  - ✅ Phase 4 `~/projects/wx-brief/distill.py` 首版落地：支持 `--school` / `--since` / `--limit` / `--force` / `--dry-run`，把 `distilled:false` raw 归入每校 `wiki/concepts/`，生成 `wiki/graph.json`，并翻 raw frontmatter 状态位。
+  - ✅ 当前 vault：`~/.ai-vault/wechat/` 共 10 校 / 42 篇 raw / 29 个 concept / 10 个 graph；`distilled_raw=42/42`，重跑 dry-run 显示 0 待处理。
+  - ✅ 当前 sources：`~/projects/wx-brief/sources.yaml` 共 10 所海淀学校 / 98 条 URL；每日 03:20 定时任务已在 2026-06-21 净增 9 篇。
+  - 🚧 Phase 5 `~/projects/wx-brief/index_rag.py` 首版落地：默认 `staging` 后端已验证 2 篇 raw → 7 chunks，写 `state/rag_staging.jsonl`，幂等重跑 0 增量；staging 不翻 `rag_indexed`。
+  - 🚧 LightRAG 已装进 `~/projects/wx-brief/.venv`，本机服务脚本为 `~/projects/wx-brief/bin/lightrag_server_local.sh`；embedding 用 `nomic-embed-text:latest`，`EMBEDDING_DIM=768`。真实文章入库时卡在本地 `qwen3:14b` entity extraction 超时，LightRAG/Ollama 已按用户要求停止，端口 `9621`/`11434` 当前未监听。
+  - ✅ Docker `wx-exporter` 正在运行：容器 `wx-exporter`，镜像 `ghcr.io/wechat-article/wechat-article-exporter:latest`，端口 `3000`；`http://localhost:3000/dashboard/account` 属于它。若要抓取固定学校的新发布文章，必须用它或等价发现层导出 URL，再回填 `sources.yaml`。
+  - **下一步建议**：先实现 `wx-exporter` → `sources.yaml` 的 URL 同步/去重脚本；并把 LightRAG 的 LLM 抽取改到更快/远端模型后，重跑 `index_rag.py --backend lightrag-api --endpoint http://127.0.0.1:9621 --limit 1` 验证真实索引。
+- **2026-06-20 状态**：
+  - ✅ `~/projects/wx-brief/fetch.py` 已支持安全扩抓参数：`--limit` / `--per-school-limit` / `--sleep-min` / `--sleep-max` / `--cooldown-every` / `--cooldown-seconds`；失败写 `state/failures.json`，每篇即时保存 ledger。
+  - ✅ Obsidian 兼容性修正完成：总 `INDEX.md` 与学校 `INDEX.md` 表格内用 Markdown 相对链接；`wiki/index.md` 与 `wiki/entities/` 保留 Obsidian wikilink；raw 只做证据层，不硬插双链。
+  - ✅ 当前 vault：`~/.ai-vault/wechat/` 共 3 校 / 12 篇；每校 4 篇；全库校验 `missing_doc_links=0` / `bad_table_rows=0` / `missing_or_empty_images=0` / `noise_files=0`。
+  - ✅ 安全扩抓实测命令已跑通：`cd ~/projects/wx-brief && .venv/bin/python fetch.py --limit 6 --per-school-limit 2 --sleep-min 8 --sleep-max 15 --cooldown-every 6 --cooldown-seconds 45`。
+  - ✅ 已安装定时抓取：`~/Library/LaunchAgents/com.james.wx-brief.fetch.plist` → `~/projects/wx-brief/bin/wx_brief_fetch_daily.sh`；每天 `03:20` 跑一轮，每轮最多 9 篇、每校最多 3 篇、篇间 45–120s、每 3 篇冷却 300s。
+  - **下一步建议**：持续用 exporter/人工把海淀各学校近一年 URL 低频回填进 `sources.yaml`；定时任务只消费已有 URL，不自动发现新学校/新文章。
+  - **Phase 4 接力**：近期 raw 入库稳定后，实现 `distill.py`，把 `raw/` 蒸馏到每校 `wiki/concepts/` 与 `wiki/entities/`，按 obwiki 渐进式披露补 L1 和双链。✅ 2026-06-21 已完成首版。
+- **关键文件**：脚本工程 `~/projects/wx-brief/`；vault `~/.ai-vault/wechat/`；项目方案 `wx-brief-implementation-plan.md`；本轮记录见 `CHANGELOG.md` 2026-06-20 多条。
 
 ## 项目结构
 
@@ -33,7 +43,7 @@ Official-wiki/
     └── trio-protocol.md               # 三件套通用协议（standard-v3）
 ```
 
-> **实际落地路径**（机器侧，不在本仓库）：脚本工程 `~/projects/wx-brief/`（fetch/distill/index_rag/retrieve.py + sources.yaml + state/）；入库 vault `~/.ai-vault/wechat/`（`raw/` 原文层 + `wiki/` 逻辑层 + `INDEX.md` L0 索引）。
+> **实际落地路径**（机器侧，不在本仓库）：脚本工程 `~/projects/wx-brief/`（fetch/distill/index_rag/retrieve.py + sources.yaml + state/）；入库 vault `~/.ai-vault/wechat/`（`schools/<区>-<校>/raw/` 原文层 + `schools/<区>-<校>/wiki/` 逻辑层 + 总 `INDEX.md` L0 索引）。
 
 ## 子模块导航
 
@@ -49,6 +59,7 @@ Official-wiki/
 uv tool install wechat-article-to-markdown
 # 抓取（落 raw）
 cd ~/projects/wx-brief && python fetch.py
+python fetch.py --school "海淀-北京市海淀区第二实验小学"
 # 沉淀双轨
 python distill.py        # 轨 A：raw → wiki concept
 python index_rag.py      # 轨 B：raw → LightRAG
